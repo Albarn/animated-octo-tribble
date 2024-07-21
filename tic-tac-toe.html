@@ -1,0 +1,110 @@
+<style>
+  * {
+    color: black;
+    background-color: white;
+    font: 1.4em monospace;
+  }
+  main * {
+    border: 1px solid black;
+    width: 100%;
+    margin: 0;
+    padding: 30px;
+  }
+  main td {
+    width: 190px;
+    height: 190px;
+    font-size: 140px;
+    display: inline-block;
+    text-align: center;
+  }
+  .ltr * {
+    border: none;
+  }
+</style>
+<main>
+  <input type="text" readonly id="header"></input>
+  <table></table>
+  <button>reset</button>
+</main>
+<script>
+  const table = document.querySelector('table');
+  const btn = document.querySelector('button');
+  const header = document.getElementById('header');
+  const cells = Array(1);
+  let turns = '';
+  const outs = [
+    [],//1
+    [58,4538,5438,5678,574,576,578,6578,754,756,758,85,94,95,96,97,98],
+    [9,75,257,452,457,458,542,547,548,567,57,584,586,587,657,854,856,857],
+	
+    [56,2576,352,356,358,532,536,538,5836,65,8536,925,926,928],
+    [23,47,26,48,24,42,27,43,28,46,32,74,34,72,37,73,36,38,62,63,64,67,68,76,78,82,83,84,86,87,924],
+    [45,54,2574,572,5834,752,8534],
+	
+    [35,53,253,254,256,453,523,524,526,543,562,563,568,583,652,653,658,853,92],
+    [25,52,354,4532,534,5432,5672,6572],
+    [2,3,5,4,6,7,8]
+  ];
+  const xs = new  Set([
+    23,47,26,48,24,42,27,43,28,46,32,74,34,72,37,73,253,254,256,2574,
+    352,356,358,354,36,38,452,457,458,4532,523,524,526,532,536,538,534,542,
+    547,548,5432,562,563,568,5678,574,576,578,572,584,586,587,5836,62,63,64,67,
+    68,652,653,658,6578,76,78,754,756,758,752,82,83,84,86,87,854,856,857,8536,94,95,
+    96,97,98,925,926,928,924
+  ]);
+  const ts = new Set([2576,4538,5438,5672,5834,6572,8534]);
+  const ai = {};
+  for(let i = 0; i < 9; i++) {
+    for(let t of outs[i]) {
+      ai[t.toString()] = i+ 1;
+    }
+  }
+	
+  function turn(i) {
+    if(cells[i].innerText || table.disabled) {
+      return;
+    }
+    if(i > 9) {
+      if(turns.includes(i - 3) && turns.includes(i - 6)) {
+        cells[i].innerText = 'o';
+        header.value = 'human wins!';
+        table.disabled = true;
+      }
+      return;
+    }
+    cells[i].innerText = 'o';
+    turns += i;
+    i = ai[turns];
+    cells[i].innerText = 'x';
+    if(xs.has(+turns)) {
+      header.value = 'ai wins';
+      table.disabled = true;
+    }
+    if(ts.has(+turns)) {
+      header.value = 'tie';
+    }
+  }
+	
+  function reset() {
+    cells.length = 1;
+    table.innerText = '';
+    table.disabled = false;
+    turns = '';
+    let tr;
+    for(let i = 0; i < 4; i++) {
+      tr = document.createElement('tr');
+      table.appendChild(tr);
+      for(let j = 0; j < 3; j++) {
+        const td = document.createElement('td');
+        td.addEventListener('click', () => turn(i * 3 + j + 1));
+        cells.push(td);
+        tr.appendChild(td);
+      }
+    }
+    cells[1].innerText = 'x';
+    header.value = 'think outside the box';
+    tr.setAttribute('class', 'ltr');
+  }
+  btn.addEventListener('click', reset);
+  reset();
+</script>
