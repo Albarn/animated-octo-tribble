@@ -1,0 +1,230 @@
+<style>
+  * {
+    color: wheat;
+    background-color: black;
+    font: 50px monospace;
+  }
+  input, button, td, img, iframe {
+    border: 1px solid wheat;
+    width: 100%;
+    margin: 0;
+  }
+  #export {
+    text-decoration: none;
+  }
+  .selected {
+    color: green;
+  }
+  .selected::before, .about::before {
+    content: '> ';
+  }
+  .modified::after {
+    content: '*';
+  }
+  textarea {
+    width: 500%;
+    font-size: 20px;
+  }
+  ol {
+    width: 200%;
+  }
+  .scroller {
+    overflow: scroll;
+    width: 100%;
+  }
+  textarea {
+    font-size: 20px;
+  }
+  iframe {
+    height: 2000px;
+  }
+  .about {
+    font-size: 12px;
+  }
+</style>
+<main id="main">
+  <div id="root">
+    <div class="scroller">
+      <ol id="fileList"></ol>
+    </div>
+    <input type="file" id="importBtn"></input>
+    <a id="exportBtn">export</a>
+    <button id="createBtn">create</button>
+    <button id="deleteBtn">delete</button>
+    <button id="openBtn">open</button>
+    <h1>about</h1>
+    <p class="about">
+      This is text editor, contained in single html page.
+      Files can be created manually or imported from internal storage.
+      Notes are kept in page localStorage, and can be later exported to disk.
+    </p>
+    <p class="about">
+      .txt, .js, .html files can be edited.
+    </p>
+    <p class="about">
+      .js files can be executed on spot, with eval function.
+    <p class="about">
+      .html files are loaded to iframe below the editor.
+      Iframe is reloaded after each save.
+      Using this method, notes editor source code can be modified and previewed, to adjust styles, etc.
+    </p>
+    <p class="about">
+      Styles are adjusted for android version of chrome browser.
+    </p>
+  </div>
+  <div id="editor" hidden>
+    <span id="editorTitle"></span>
+    <div class="scroller">
+      <textarea id="notepad" rows="25"></textarea>
+    </div>
+    <button id="saveBtn">save</button>
+    <button id="runBtn" hidden>run</button>
+  </div>
+  <img id="imgPreview" alt="error" hidden />
+  <button id="backBtn" hidden>back</button>
+  <iframe id="pagePreview" hidden></iframe>
+</main>
+<script>
+  const n = {};
+  for(let el of document.querySelectorAll('*')) {
+    if(el.id) {
+      n[el.id] = el;
+    }
+  }
+  let selectedFile = null;
+  let blob = null;
+  let files = new Set();
+	
+  function saveFiles() {
+    localStorage.setItem('files', JSON.stringify(Array.from(files)));
+  }
+	
+  function load() {
+    const filesJson = localStorage.getItem('files');
+    files = filesJson ? new Set(JSON.parse(filesJson)) : files;
+    n.fileList.innerText = "";
+    for(let fileName of Array.from(files).sort()) {
+      const li = document.createElement('li');
+      li.innerText = fileName;
+      li.addEventListener('click', () => {
+      if(selectedFile) {
+        selectedFile.className = '';
+      }
+      if(selectedFile == li) {
+	selectedFile = null;
+	return;
+      }
+      li.className = 'selected';
+      selectedFile = li;
+				
+      const file = JSON.parse(localStorage.getItem(fileName));
+      const bytes = new Uint8Array(file.bytes.length);
+      for(let i = 0; i < bytes.length; i++) {
+        bytes[i] = file.bytes[i];
+      }
+      blob = new Blob([bytes], { ...file });
+        n.exportBtn.href = URL.createObjectURL(blob);
+        n.exportBtn.download = selectedFile.innerText;
+      });
+      n.fileList.appendChild(li);
+    }
+  }
+  load();
+
+  n.importBtn.addEventListener('change', async () => {
+    const file = n.importBtn.files[0];
+    files.add(file.name);
+    saveFiles();
+    load();
+    const reader = file.stream().getReader();
+    const bytes = [];
+    for(let pg = await reader.read(); !pg.done ; pg = await reader.read()) {
+      bytes.push(...pg.value);
+    }
+    localStorage.setItem(file.name, JSON.stringify({ bytes, type: file.type }));
+  });
+	
+  n.createBtn.addEventListener('click', () => {
+    const fileName = prompt('file name');
+    if(!fileName) {
+      return;
+    }
+    files.add(fileName);
+    saveFiles();
+    load();
+    localStorage.setItem(fileName, JSON.stringify({ bytes: [] }));
+  });
+	
+  n.deleteBtn.addEventListener('click', () => {
+    if(!selectedFile) {
+      return;
+    }
+    files.delete(selectedFile.innerText);
+    saveFiles();
+    load();
+  });
+	
+  n.openBtn.addEventListener('click', async () => {
+    if(!selectedFile) {
+      return;
+    }
+    n.root.hidden = true;
+    n.backBtn.hidden = false;
+    if(selectedFile.innerText.match('\\.(txt|html|js)$')) {		
+      n.editor.hidden = false;
+      n.editorTitle.innerText = selectedFile.innerText;
+      n.notepad.value = '';
+      n.notepad.value = await blob.text();
+    }
+    if(selectedFile.innerText.match('\\.js$')) {
+      n.runBtn.hidden = false;
+    }
+    if(selectedFile.innerText.match('\\.jpg')) {
+      n.imgPreview.hidden = false;
+      n.imgPreview.src = n.exportBtn.href;
+    }
+    if(selectedFile.innerText.match('\\.html')) {
+      n.pagePreview.hidden = false;
+      n.pagePreview.src = n.exportBtn.href;
+    }
+  });
+	
+  n.backBtn.addEventListener('click', () => {
+    n.root.hidden = false;
+    n.editor.hidden = true;
+    n.backBtn.hidden = true;
+    n.runBtn.hidden = true;
+    n.imgPreview.hidden = true;
+    n.pagePreview.hidden = true;
+    n.editorTitle.className ='';
+  });
+	
+  n.saveBtn.addEventListener('click', () => {
+    const bytes = new Uint8Array(n.notepad.value.length);
+    for(let i = 0; i < bytes.length; i++) {
+      bytes[i] = n.notepad.value.charCodeAt(i);
+    }
+    const type = (selectedFile.innerText.match('\\.html') && 'text/html');
+    blob = new Blob([bytes], { type });
+    n.exportBtn.href = URL.createObjectURL(blob);
+    n.pagePreview.src = n.exportBtn.href;
+    localStorage.setItem(selectedFile.innerText, JSON.stringify({ 
+      bytes: Array.from(bytes),
+      type
+    }));
+    n.editorTitle.className = '';
+  });
+	
+  n.notepad.addEventListener('keyup', () => {
+    n.editorTitle.className = 'modified';
+  });
+	
+  n.runBtn.addEventListener('click', () => {	
+    try {
+      alert(eval(notepad.value));
+    }
+    catch(e) {
+      alert(e);
+    }
+  });
+</script>
