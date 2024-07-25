@@ -1,8 +1,9 @@
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   * {
     color: wheat;
     background-color: black;
-    font: 50px monospace;
+    font: 14px monospace;
   }
   input, button, td, img, iframe {
     border: 1px solid wheat;
@@ -23,7 +24,6 @@
   }
   textarea {
     width: 500%;
-    font-size: 20px;
   }
   ol {
     width: 200%;
@@ -32,14 +32,11 @@
     overflow: scroll;
     width: 100%;
   }
-  textarea {
-    font-size: 20px;
-  }
   iframe {
     height: 2000px;
   }
   .about {
-    font-size: 12px;
+    font-size: 10px;
   }
 </style>
 <main id="main">
@@ -85,65 +82,72 @@
   <iframe id="pagePreview" hidden></iframe>
 </main>
 <script>
+  // Store elements by their IDs
   const n = {};
-  for(let el of document.querySelectorAll('*')) {
-    if(el.id) {
-      n[el.id] = el;
-    }
-  }
+  document.querySelectorAll('*[id]')
+    .forEach((el) => n[el.id] = el);
+
+  // li with file name
   let selectedFile = null;
+  // selected file blob
   let blob = null;
+  // all created file names
   let files = new Set();
-	
+
+  // Save the current set of file names to localStorage
   function saveFiles() {
     localStorage.setItem('files', JSON.stringify(Array.from(files)));
   }
-	
-  function load() {
+
+  function selectFile(li) {
+    if (selectedFile) {
+        selectedFile.className = '';
+    }
+    if (selectedFile === li) {
+        selectedFile = null;
+        return;
+    }
+    li.className = 'selected';
+    selectedFile = li;
+
+    const file = JSON.parse(localStorage.getItem(li.innerText));
+    const bytes = new Uint8Array(file.bytes);
+    blob = new Blob([bytes], { type: file.type });
+    n.exportBtn.href = URL.createObjectURL(blob);
+    n.exportBtn.download = li.innerText;
+  }
+
+  // Load the files from localStorage and update the file list in the UI
+  function loadFiles() {
     const filesJson = localStorage.getItem('files');
     files = filesJson ? new Set(JSON.parse(filesJson)) : files;
-    n.fileList.innerText = "";
+    n.fileList.innerText = '';
     for(let fileName of Array.from(files).sort()) {
       const li = document.createElement('li');
       li.innerText = fileName;
-      li.addEventListener('click', () => {
-      if(selectedFile) {
-        selectedFile.className = '';
-      }
-      if(selectedFile == li) {
-	selectedFile = null;
-	return;
-      }
-      li.className = 'selected';
-      selectedFile = li;
-				
-      const file = JSON.parse(localStorage.getItem(fileName));
-      const bytes = new Uint8Array(file.bytes.length);
-      for(let i = 0; i < bytes.length; i++) {
-        bytes[i] = file.bytes[i];
-      }
-      blob = new Blob([bytes], { ...file });
-        n.exportBtn.href = URL.createObjectURL(blob);
-        n.exportBtn.download = selectedFile.innerText;
-      });
+      li.addEventListener('click', () => selectFile(li));
       n.fileList.appendChild(li);
     }
   }
-  load();
 
+  // Initialize files on page load
+  loadFiles();
+
+  // Handle file import
   n.importBtn.addEventListener('change', async () => {
     const file = n.importBtn.files[0];
     files.add(file.name);
     saveFiles();
-    load();
+    loadFiles();
     const reader = file.stream().getReader();
     const bytes = [];
-    for(let pg = await reader.read(); !pg.done ; pg = await reader.read()) {
-      bytes.push(...pg.value);
+    while(!(page = await reader.read()).done) {
+      bytes.push(...page.value);
     }
     localStorage.setItem(file.name, JSON.stringify({ bytes, type: file.type }));
   });
-	
+
+  // Handle new file creation	
   n.createBtn.addEventListener('click', () => {
     const fileName = prompt('file name');
     if(!fileName) {
@@ -151,19 +155,21 @@
     }
     files.add(fileName);
     saveFiles();
-    load();
+    loadFiles();
     localStorage.setItem(fileName, JSON.stringify({ bytes: [] }));
   });
-	
+
+  // Handle file deletion
   n.deleteBtn.addEventListener('click', () => {
     if(!selectedFile) {
       return;
     }
     files.delete(selectedFile.innerText);
     saveFiles();
-    load();
+    loadFiles();
   });
-	
+
+  // Handle file opening
   n.openBtn.addEventListener('click', async () => {
     if(!selectedFile) {
       return;
@@ -188,7 +194,8 @@
       n.pagePreview.src = n.exportBtn.href;
     }
   });
-	
+
+  // Handle back button click
   n.backBtn.addEventListener('click', () => {
     n.root.hidden = false;
     n.editor.hidden = true;
@@ -198,7 +205,8 @@
     n.pagePreview.hidden = true;
     n.editorTitle.className ='';
   });
-	
+
+  // Handle save button click
   n.saveBtn.addEventListener('click', () => {
     const bytes = new Uint8Array(n.notepad.value.length);
     for(let i = 0; i < bytes.length; i++) {
@@ -214,11 +222,13 @@
     }));
     n.editorTitle.className = '';
   });
-	
+
+  // Handle notepad keyup event	
   n.notepad.addEventListener('keyup', () => {
     n.editorTitle.className = 'modified';
   });
-	
+
+  // Handle run button click
   n.runBtn.addEventListener('click', () => {	
     try {
       alert(eval(notepad.value));
