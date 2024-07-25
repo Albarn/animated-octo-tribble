@@ -2,12 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- todo: update styles for viewport
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Canvas Animation</title>
     <style>
         canvas {
-            //border: 1px solid wheat;
+            width: 100%;
             display: block;
             margin: 0 auto;
         }
@@ -18,37 +17,37 @@
         #leftBtn {
           position: absolute;
           top: 0;
-          width: 400px;
-          height: 2000px;
+          width: 50%;
           opacity: 0;
         }
         #rightBtn {
           position: absolute;
           top: 0;
-          width: 400px;
-          height: 2000px;
-          left: 500px;
+          width: 50%;
+          left: 50%;
           opacity: 0;
+          height: 100px;
         }
     </style>
 </head>
 <body>
-    <canvas id="animationCanvas" width="900" height="2000"></canvas>
+    <canvas id="animationCanvas"></canvas>
     <button id="leftBtn">left</button>
     <button id="rightBtn">right</button>
     <p id="log"></p>
     <script>
 const canvas = document.getElementById('animationCanvas');
+canvas.height = window.screen.height;
 const log = document.getElementById('log');
 const context = canvas.getContext('2d');
 let turn = 0;
 
 const player = {
-  x: 450,
-  y: 1400,
+  x: canvas.width * 0.5,
+  y: canvas.height * 0.6,
   dx: 0,
   radius: 30,
-  throttle: 0.8,
+  throttle: 0.2,
   drag: 0.9,
   maxSpeed: 5,
   shape: [0, 0, 20, 10, 5, 10, 0, 15, -5, 10, -20, 10],
@@ -58,6 +57,8 @@ const player = {
     //[-5, 10, -20, 10, 0, 0],
   ],
 }
+player.shape = mul(player.shape, [0.6, 0.6]);
+player.collisions[0] = mul(player.collisions[0], [0.6, 0.6]);
 
 const stoneShapes = [
   [50, 50, 40, 60, -20, 30, -10, -40, 10, -50],
@@ -71,6 +72,11 @@ const stoneShapes = [
   [0, 0, 20, 10, -50, 20, -40, 10],
   [0, 0, 10, 20, 0, 30, -10, 20],
 ];
+
+const stars = new Set();
+while(stars.size < 100) {
+  stars.add({ x: Math.random() * canvas.width, y: Math.random() * canvas.height});
+}
 
 const stones = new Set();
 
@@ -100,6 +106,27 @@ function make(shape) {
   }
   context.closePath();
   //context.fill();
+}
+
+function rotate(polygon, angle) {
+    const radians = angle * (Math.PI / 180); // Convert angle to radians
+    const cos = Math.cos(radians);
+    const sin = Math.sin(radians);
+
+    const rotatedPolygon = [];
+
+    for (let i = 0; i < polygon.length; i += 2) {
+        const x = polygon[i];
+        const y = polygon[i + 1];
+
+        // Rotate point
+        const rotatedX = x * cos - y * sin;
+        const rotatedY = x * sin + y * cos;
+
+        rotatedPolygon.push(rotatedX, rotatedY);
+    }
+
+    return rotatedPolygon;
 }
 
 function arePolygonsColliding(polygonA, polygonB) {
@@ -163,9 +190,27 @@ function arePolygonsColliding(polygonA, polygonB) {
 let score = 0;
 let hiscore = 0;
 function draw() {
+    const bin = [];
+
     // Clear the canvas
     context.clearRect(0, 0, canvas.width, canvas.height);
-    context.font = '30px monospace';
+    context.font = '15px monospace';
+
+   while(stars.size < 200) {
+     stars.add({ x: Math.random() * canvas.width, y: Math.random() * -canvas.height});
+   }
+   for(let star of stars) {
+     context.fillStyle = 'white';
+     context.fillText('.', star.x, star.y);
+     star.y += 0.1;
+     if(star.y > canvas.height) {
+       bin.push(star);
+     }
+   }
+   for(let star of bin) {
+     stars.delete(star);
+   }
+   bin.length = 0;
 
     // Draw the player
     context.fillStyle = 'aqua';
@@ -174,8 +219,7 @@ function draw() {
     shape = add(shape, [player.x, player.y]);
     make(shape);
     context.fill();
-    context.fillText('score: ' + score + ' hiscore: ' + hiscore, 50, 50);
-
+    
     player.dx += turn * player.throttle;
     player.dx = Math.max(-player.maxSpeed, player.dx);
     player.dx = Math.min(player.maxSpeed, player.dx);
@@ -188,25 +232,30 @@ function draw() {
 
 log.innerHTML = player.x + '<br/>' + player.dx;
 
-   if (stones.size < 20) {
+   if (stones.size < 10) {
 //return;
      stones.add({
-       y: Math.random() * -500 - 200,
+       y: Math.random() * -200 - 200,
        x: Math.random() * canvas.width,
-       dy: Math.random() * 2 + 1,
+       dy: Math.random() * 2 + 0.1,
        shape: mul(
-         stoneShapes[Math.floor(Math.random() * stoneShapes.length)],
-         [Math.random() * 3 + 1, Math.random() * 3 + 1]
+         rotate(
+           stoneShapes[Math.floor(Math.random() * stoneShapes.length)],
+           Math.random() * 360,
+         ),
+         [Math.random() * 2 + 0.7, Math.random() * 2 + 0.7]
        )
      });
    }
    context.strokeStyle = 'wheat';
-   context.lineWidth = 3;
-   const bin = [];
+   context.lineWidth = 1;
+   
    for (let stone of stones) {
      shape = stone.shape;
      shape = add(shape, [stone.x, stone.y]);
      make(shape);
+     context.fillStyle = 'black';
+     context.fill();
      context.stroke();
      for(let c of player.collisions) {
        if(arePolygonsColliding
@@ -220,7 +269,7 @@ log.innerHTML = player.x + '<br/>' + player.dx;
        }
      }
      stone.y += stone.dy;
-     if (stone.y > canvas.height + 500) {
+     if (stone.y > canvas.height + 200) {
        bin.push(stone);
      }
    }
@@ -228,6 +277,9 @@ log.innerHTML = player.x + '<br/>' + player.dx;
      stones.delete(stone);
      score++;
    }
+   
+   context.fillStyle = 'aqua';
+   context.fillText('score: ' + score + ' hiscore: ' + hiscore, 20, 20);
 }
 
 function animate() {
@@ -240,8 +292,10 @@ animate();
 
 const leftBtn = document.getElementById('leftBtn');
 const rightBtn = document.getElementById('rightBtn');
+leftBtn.style.height = window.screen.height + 'px';;
 leftBtn.addEventListener('touchstart', () => turn = -1);
 leftBtn.addEventListener('touchend', () => turn = 0);
+rightBtn.style.height = window.screen.height + 'px';
 rightBtn.addEventListener('touchstart', () => turn = 1);
 rightBtn.addEventListener('touchend', () => turn = 0);
 </script>
