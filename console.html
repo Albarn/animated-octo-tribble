@@ -1,0 +1,27 @@
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+* { 
+  width: 100%;
+  margin: auto;
+  font-size: 20px;
+  font-family: monospace;
+  border: none;
+  background-color: black;
+  color: darkgray;
+}
+</style>
+<textarea rows="200" onkeyup="
+const page = document.querySelector('textarea');
+const lines = page.value.split('\n');
+const cmd = lines[lines.length - 2].substring(1);
+if(page.value.endsWith('\n')) {
+  try {
+    page.value += eval(cmd);
+  }
+  catch(e) {
+    page.value += e;
+  }
+  page.value += '\n> ';
+  page.scroll(1000,1000);
+}
+">> </textarea>
