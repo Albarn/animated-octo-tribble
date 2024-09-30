@@ -2,5 +2,15 @@
   "name":"launcher",
   "display":"standalone",
   "start_url":"/index.html",
-  "scope":"/"
+  "scope":"/",
+  "icons":[
+    {
+      "src":"launcher/android-launchericon-192-192.png",
+      "sizes":"192x192"
+    },
+    {
+      "src":"launcher/android-launchericon-512-512.png",
+      "sizes":"512x512"
+    }
+  ]
 }
