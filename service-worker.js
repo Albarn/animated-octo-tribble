@@ -1,10 +1,18 @@
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(function(registration) {
-        console.log('Service Worker registered with scope:', registration.scope);
-      }, function(error) {
-        console.log('Service Worker registration failed:', error);
-      });
-  });
-}
+self.addEventListener('install', function(event) {
+  console.log('Service Worker installing.');
+  // Perform install steps
+});
+
+self.addEventListener('activate', function(event) {
+  console.log('Service Worker activated.');
+});
+
+self.addEventListener('fetch', function(event) {
+  console.log('Fetching:', event.request.url);
+  event.respondWith(
+    caches.match(event.request)
+      .then(function(response) {
+        return response || fetch(event.request);
+      })
+  );
+});
