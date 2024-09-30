@@ -203,6 +203,38 @@
   n.notepad.addEventListener('keyup', () => {
     n.editorTitle.className = 'modified';
   });
+ 
+ if ('serviceWorker' in navigator) {
+  const workerScript = `
+    self.addEventListener('install', (event) => {
+      console.log('Dynamic Service Worker installed');
+      // Perform any install steps
+    });
+
+    self.addEventListener('activate', (event) => {
+      console.log('Dynamic Service Worker activated');
+    });
+
+    self.addEventListener('fetch', (event) => {
+      console.log('Fetching:', event.request.url);
+      event.respondWith(fetch(event.request));
+    });
+  `;
+
+  // Create a Blob containing the worker script
+  const blob = new Blob([workerScript], { type: 'application/javascript' });
+
+  // Generate a temporary URL for the Blob
+  const workerURL = URL.createObjectURL(blob);
+
+  // Register the service worker with the generated URL
+  navigator.serviceWorker.register(workerURL).then(function (registration) {
+    console.log('Service Worker registered with dynamic script:', registration.scope);
+  }).catch(function (error) {
+    console.log('Service Worker registration failed:', error);
+  });
+}
+
       </script>
  </body>
 </html>
