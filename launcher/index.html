@@ -1,0 +1,198 @@
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="/animated-octo-tribble/launcher/manifest.json">
+<style>
+  * {
+    color: wheat;
+    background-color: black;
+    font: 14px monospace;
+  }
+  input, button {
+    border: 1px solid wheat;
+    display: block;
+    width: 100%;
+    margin: auto;
+    padding: 5px;
+  }
+  .button {
+    border: 1px solid wheat;
+    width: 356px;/*todo: fix inconsistent width*/
+    display: block;
+    padding: 5px;
+    margin: auto;
+    text-decoration: none;
+    text-align: center;
+  }
+  .selected {
+    color: green;
+  }
+  .selected::before, .about::before {
+    content: '> ';
+  }
+  .modified::after {
+    content: '*';
+  }
+  textarea {
+    width: 500%;
+  }
+  ol {
+    width: 200%;
+  }
+  .scroller {
+    overflow: scroll;
+    width: 100%;
+  }
+</style>
+<main id="main">
+  <div id="root">
+    <h1>Launcher</h1>
+    <div class="scroller">
+      <ol id="fileList"></ol>
+    </div>
+    <input type="file" id="importBtn"></input>
+    <button id="createBtn">create</button>
+    <button id="deleteBtn">delete</button>
+    <button id="editBtn">edit</button>
+  </div>
+  <div id="editor" hidden>
+    <span id="editorTitle"></span>
+    <div class="scroller">
+      <textarea id="notepad" rows="25"></textarea>
+    </div>
+    <button id="saveBtn">save</button>
+    <button id="backBtn">back</button>
+  </div>
+  <a id="exportBtn" class="button">export</a>
+    <a id="openBtn" class="button" target="blank">open</a>
+</main>
+<script>
+  // Store elements by their IDs
+  const n = {};
+  document.querySelectorAll('*[id]')
+    .forEach((el) => n[el.id] = el);
+
+  // li with file name
+  let selectedFile = null;
+  // selected file blob
+  let blob = null;
+  let blobType = null;
+  // all created file names
+  let files = new Set();
+
+  // Save the current set of file names to localStorage
+  function saveFiles() {
+    localStorage.setItem('files', JSON.stringify(Array.from(files)));
+  }
+
+  function selectFile(li) {
+    if (selectedFile) {
+        selectedFile.className = '';
+    }
+    if (selectedFile === li) {
+        selectedFile = null;
+        n.openBtn.href = '';
+        return;
+    }
+    li.className = 'selected';
+    selectedFile = li;
+
+    const file = JSON.parse(localStorage.getItem(li.innerText));
+    const bytes = new Uint8Array(file.bytes);
+    blob = new Blob([bytes], { type: file.type });
+    blobType = file.type;
+    n.exportBtn.href = n.openBtn.href = URL.createObjectURL(blob);
+    n.exportBtn.download = li.innerText;
+  }
+
+  // Load the files from localStorage and update the file list in the UI
+  function loadFiles() {
+    const filesJson = localStorage.getItem('files');
+    files = filesJson ? new Set(JSON.parse(filesJson)) : files;
+    n.fileList.innerText = '';
+    for(let fileName of Array.from(files).sort()) {
+      const li = document.createElement('li');
+      li.innerText = fileName;
+      li.addEventListener('click', () => selectFile(li));
+      n.fileList.appendChild(li);
+    }
+  }
+
+  // Initialize files on page load
+  loadFiles();
+
+  // Handle file import
+  n.importBtn.addEventListener('change', async () => {
+    const file = n.importBtn.files[0];
+    files.add(file.name);
+    saveFiles();
+    loadFiles();
+    const reader = file.stream().getReader();
+    const bytes = [];
+    while(!(page = await reader.read()).done) {
+      bytes.push(...page.value);
+    }
+    localStorage.setItem(file.name, JSON.stringify({ bytes, type: file.type }));
+  });
+
+  // Handle new file creation	
+  n.createBtn.addEventListener('click', () => {
+    const fileName = prompt('file name');
+    if(!fileName) {
+      return;
+    }
+    files.add(fileName);
+    saveFiles();
+    loadFiles();
+    localStorage.setItem(fileName, JSON.stringify({ bytes: [], type: 'text/html' }));
+  });
+
+  // Handle file deletion
+  n.deleteBtn.addEventListener('click', () => {
+    if(!selectedFile) {
+      return;
+    }
+    files.delete(selectedFile.innerText);
+    localStorage.removeItem(selectedFile.innerText);
+    saveFiles();
+    loadFiles();
+  });
+
+  // Handle file opening
+  n.editBtn.addEventListener('click', async () => {
+    if(!selectedFile) {
+      return;
+    }
+    n.root.hidden = true;	
+    n.editor.hidden = false;
+    n.editorTitle.innerText = selectedFile.innerText;
+    n.notepad.value = '';
+    n.notepad.value = await blob.text();
+  });
+
+  // Handle back button click
+  n.backBtn.addEventListener('click', () => {
+    n.root.hidden = false;
+    n.editor.hidden = true;
+    n.editorTitle.className ='';
+  });
+
+  // Handle save button click
+  n.saveBtn.addEventListener('click', () => {
+    const bytes = new Uint8Array(n.notepad.value.length);
+    for(let i = 0; i < bytes.length; i++) {
+      bytes[i] = n.notepad.value.charCodeAt(i);
+    }
+    const type = blobType;
+    blob = new Blob([bytes], { type });
+    n.exportBtn.href = n.openBtn.href = URL.createObjectURL(blob);
+    localStorage.setItem(selectedFile.innerText, JSON.stringify({ 
+      bytes: Array.from(bytes),
+      type
+    }));
+    n.editorTitle.className = '';
+  });
+
+  // Handle notepad keyup event	
+  n.notepad.addEventListener('keyup', () => {
+    n.editorTitle.className = 'modified';
+  });
+      </script>
