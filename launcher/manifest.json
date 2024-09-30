@@ -1,0 +1,6 @@
+{
+  "name":"launcher",
+  "display":"standalone",
+  "start_url":"/animated-octo-tribble/launcher/",
+  "scope":"/animated-octo-tribble/launcher/"
+}
