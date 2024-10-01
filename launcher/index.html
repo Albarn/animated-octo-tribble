@@ -2,30 +2,22 @@
 <!DOCTYPE html>
 <html lang="en">
  <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>launcher</title>
-  <meta name="description" content="html pages launcher and editor"/>
-<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjoiTGF1bmNoZXIiLAogICJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsCiAgInN0YXJ0X3VybCI6Ii9hbmltYXRlZC1vY3RvLXRyaWJibGUvbGF1bmNoZXIvaW5kZXguaHRtbCIsCiAgInNjb3BlIjoiL2FuaW1hdGVkLW9jdG8tdHJpYmJsZS9sYXVuY2hlci8iLAogICJpY29ucyI6WwogICAgewogICAgICAic3JjIjoiL3NoYXJlZC9pY29uLnN2ZyIsCiAgICAgICJzaXplcyI6IjQ4eDQ4IDcyeDcyIDk2eDk2IDEyOHgxMjggMTkyeDE5MiA1MTJ4NTEyIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIsCiAgICAgICJwdXJwb3NlIjogImFueSIKICAgIH0KICBdCn0K"/>
-  <script src="/animated-octo-tribble/shared/service-worker-registration.js"></script>
-<style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Launcher</title>
+  <meta name="description" content="html pages launcher and editor" />
+  <link rel="manifest" href="/manifest.json"/>
+  <style>
   * {
     color: wheat;
     background-color: black;
     font: 14px monospace;
   }
-  input, button {
-    border: 1px solid wheat;
+  input, button, .button {
+    border: none;
     display: block;
     width: 100%;
     margin: auto;
     padding: 5px;
-  }
-  .button {
-    border: 1px solid wheat;
-    width: 356px;/*todo: fix inconsistent width*/
-    display: block;
-    padding: 5px;
-    margin: auto;
     text-decoration: none;
     text-align: center;
   }
@@ -48,7 +40,19 @@
     overflow: scroll;
     width: 100%;
   }
-</style>
+  </style>
+  <script>
+   if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(function(registration) {
+        console.log('Service Worker registered with scope:', registration.scope);
+      }, function(error) {
+        console.log('Service Worker registration failed:', error);
+      });
+  });
+}
+    </script>
  </head>
  <body>
 <main id="main">
@@ -204,6 +208,6 @@
   n.notepad.addEventListener('keyup', () => {
     n.editorTitle.className = 'modified';
   }); 
-      </script>
+</script>
  </body>
 </html>
