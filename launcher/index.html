@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>launcher</title>
   <meta name="description" content="html pages launcher and editor"/>
-<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjoibGF1bmNoZXIiLAogICJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsCiAgInN0YXJ0X3VybCI6Ii9pbmRleC5odG1sIiwKICAic2NvcGUiOiIvIiwKICAiaWNvbnMiOlsKICAgIHsKICAgICAgInNyYyI6Imh0dHBzOi8vd3d3LnN2Z3JlcG8uY29tL3Nob3cvNTM1MTk1L2JhZGdlLnN2ZyIsCiAgICAgICJzaXplcyI6IjQ4eDQ4IDcyeDcyIDk2eDk2IDEyOHgxMjggMTkyeDE5MiA1MTJ4NTEyIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIsCiAgICAgICJwdXJwb3NlIjogImFueSIKICAgIH0KICBdCn0K"/>
+<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjoiTGF1bmNoZXIiLAogICJkaXNwbGF5Ijoic3RhbmRhbG9uZSIsCiAgInN0YXJ0X3VybCI6Ii9pbmRleC5odG1sIiwKICAic2NvcGUiOiIvIiwKICAiaWNvbnMiOlsKICAgIHsKICAgICAgInNyYyI6Imh0dHBzOi8vYWxiYXJuLmdpdGh1Yi5pby9hbmltYXRlZC1vY3RvLXRyaWJibGUvc2hhcmVkL2ljb24uc3ZnIiwKICAgICAgInNpemVzIjoiNDh4NDggNzJ4NzIgOTZ4OTYgMTI4eDEyOCAxOTJ4MTkyIDUxMng1MTIiLAogICAgICAidHlwZSI6ICJpbWFnZS9zdmcreG1sIiwKICAgICAgInB1cnBvc2UiOiAiYW55IgogICAgfQogIF0KfQ=="/>
 <style>
   * {
     color: wheat;
@@ -48,18 +48,7 @@
     width: 100%;
   }
 </style>
-  <script>
-   if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/service-worker.js')
-      .then(function(registration) {
-        console.log('Service Worker registered with scope:', registration.scope);
-      }, function(error) {
-        console.log('Service Worker registration failed:', error);
-      });
-  });
-}
-</script>
+  <script src="https://albarn.github.io/animated-octo-tribble/shared/service-worker-registration.js" />
  </head>
  <body>
 <main id="main">
