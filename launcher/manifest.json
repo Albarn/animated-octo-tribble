@@ -1,0 +1,14 @@
+{
+  "name":"launcher",
+  "display":"standalone",
+  "start_url":"/index.html",
+  "scope":"/",
+  "icons":[
+    {
+      "src":"https://www.svgrepo.com/show/535195/badge.svg",
+      "sizes":"48x48 72x72 96x96 128x128 192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
